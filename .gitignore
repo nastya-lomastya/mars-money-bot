@@ -1,0 +1,12 @@
+.env
+.env.rtf
+credentials.json
+gmail_credentials.json
+gmail_token.pickle
+*.log
+.DS_Store
+__pycache__/
+*.pyc
+.claude/
+.vscode/
+web/config.js

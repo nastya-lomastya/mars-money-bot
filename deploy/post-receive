@@ -1,0 +1,24 @@
+#!/bin/bash
+set -e
+
+WORKDIR=/root/kafe_bot_checkout
+BOTDIR=/root/kafe_bot
+WEBDIR=/var/www/mars
+GITDIR=/root/kafe_bot.git
+
+mkdir -p "$WORKDIR"
+git --git-dir="$GITDIR" --work-tree="$WORKDIR" checkout -f main
+
+# Bot scripts and parser (secrets like .env/credentials.json stay untouched — they're gitignored)
+cp "$WORKDIR"/*.py "$BOTDIR/" 2>/dev/null || true
+cp "$WORKDIR"/requirements.txt "$BOTDIR/" 2>/dev/null || true
+
+# Static web app served by nginx
+# config.js is excluded — it holds the real password/CSV URLs and lives only on the
+# server, set up once manually. It is never in git, so --delete must not touch it.
+if [ -d "$WORKDIR/web" ]; then
+  rsync -a --delete --exclude=config.js "$WORKDIR/web/" "$WEBDIR/"
+fi
+
+echo "Deployed $(date '+%Y-%m-%d %H:%M:%S')"
+echo "Note: bot scripts copied but NOT restarted — restart manually if you changed bot logic (see KURULUM.md)."
