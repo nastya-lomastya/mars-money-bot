@@ -46,7 +46,7 @@ CATEGORIES = {
     "Kahvehane": [
         ("💧 Su", "Su"),
         ("🧊 Buz", "Buz"),
-        ("🐳 Su (Uludag)", "Su (Uludag)"),
+        ("🐳 Su (Uludağ)", "Su (Uludağ)"),
         ("🍋 Ürünler", "Ürünler"),
         ("🥛 Süt", "Süt"),
         ("☕️ Türk Kahvesi", "Türk Kahvesi"),
