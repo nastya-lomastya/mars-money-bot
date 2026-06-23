@@ -38,8 +38,9 @@ PUSH_CHAT_IDS = [
 ENTITY, AMOUNT, CATEGORY, DESCRIPTION, CONFIRM = range(5)
 EDIT_FIELD, EDIT_VALUE, EDIT_CAT = range(5, 8)
 
-CATEGORIES = [
+CATEGORIES_DEFAULT = [
     ("💼 Maaşlar", "Maaşlar"),
+    ("🏛️ Maaşlar SGK", "Maaşlar SGK"),
     ("🏠 Kira", "Kira"),
     ("🍋 Ürünler", "Ürünler"),
     ("🍊 Sebze / Meyve", "Sebze / Meyve"),
@@ -53,7 +54,7 @@ CATEGORIES = [
     ("🧹 Temizlik", "Temizlik"),
     ("📊 Muhasebeci", "Muhasebeci"),
     ("🔧 Bakım/Onarım", "Bakım/Onarım"),
-    ("📦 Karton Ekipman (Party Outlet)", "Karton Ekipman (Party Outlet)"), 
+    ("📦 Karton Ekipman (Party Outlet)", "Karton Ekipman (Party Outlet)"),
     ("⚙️ Ekipman", "Ekipman"),
     ("🍫 Chocolate", "Chocolate"),
     ("🍭 Şurup", "Şurup"),
@@ -64,15 +65,36 @@ CATEGORIES = [
     ("➕ Diğer", "Diğer"),
 ]
 
+CATEGORIES_KISISEL = [
+    ("🍋 Ürünler", "Ürünler"),
+    ("☕ Cafe", "Cafe"),
+    ("⚙️ Ekipman", "Ekipman"),
+    ("➕ Diğer", "Diğer"),
+]
+
+CATEGORIES_BY_ENTITY = {
+    "Mutfak": CATEGORIES_DEFAULT,
+    "Kahvehane": CATEGORIES_DEFAULT,
+    "Kişisel": CATEGORIES_KISISEL,
+}
+
 
 ENTITIES = [
     ("🍳 Mutfak", "Mutfak"),
     ("☕ Kahvehane", "Kahvehane"),
+    ("👤 Kişisel", "Kişisel"),
 ]
+
+ENTITY_ICONS = {
+    "Mutfak": "🍳",
+    "Kahvehane": "☕",
+    "Kişisel": "👤",
+}
 
 SHEET_NAMES = {
     "Mutfak": "Sahip Giderleri - Mutfak",
     "Kahvehane": "Sahip Giderleri - Kahvehane",
+    "Kişisel": "Sahip Giderleri - Kişisel",
 }
 
 
@@ -112,10 +134,11 @@ def get_entity_keyboard():
     return InlineKeyboardMarkup(keyboard)
 
 
-def get_category_keyboard():
+def get_category_keyboard(entity="Mutfak"):
+    categories = CATEGORIES_BY_ENTITY.get(entity, CATEGORIES_DEFAULT)
     keyboard = []
     row = []
-    for label, value in CATEGORIES:
+    for label, value in categories:
         row.append(InlineKeyboardButton(label, callback_data=f"cat:{value}"))
         if len(row) == 2:
             keyboard.append(row)
@@ -172,7 +195,7 @@ async def amount_received(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text(
         f"✅ İşletme: *{context.user_data['entity']}*\n"
         f"✅ Tutar: *₺{amount:,.2f}*\n\n📂 *Kategori seç:*",
-        reply_markup=get_category_keyboard(),
+        reply_markup=get_category_keyboard(context.user_data.get("entity", "Mutfak")),
         parse_mode="Markdown"
     )
     return CATEGORY
@@ -303,7 +326,8 @@ async def edit_field_selected(update: Update, context: ContextTypes.DEFAULT_TYPE
         await query.edit_message_text("💰 Yeni tutarı gir (₺):")
         return EDIT_VALUE
     elif field == "category":
-        await query.edit_message_text("📂 Yeni kategoriyi seç:", reply_markup=get_category_keyboard())
+        last_entity = context.user_data.get("last_entity", "Mutfak")
+        await query.edit_message_text("📂 Yeni kategoriyi seç:", reply_markup=get_category_keyboard(last_entity))
         return EDIT_CAT
     elif field == "description":
         await query.edit_message_text("📝 Yeni açıklamayı gir:")
@@ -401,12 +425,12 @@ async def ozet(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 for r in filtered:
                     cat = r.get("Kategori", "Diğer")
                     by_cat[cat] = by_cat.get(cat, 0) + float(r.get("Tutar (₺)", 0))
-                icon = "🍳" if entity_key == "Mutfak" else "☕"
+                icon = ENTITY_ICONS.get(entity_key, "📁")
                 lines.append(f"\n{icon} *{entity_key} giderleri:* ₺{entity_total:,.2f}")
                 for cat, amt in sorted(by_cat.items(), key=lambda x: -x[1]):
                     lines.append(f"  • {cat}: ₺{amt:,.2f}")
             except:
-                lines.append(f"\n{'🍳' if entity_key == 'Mutfak' else '☕'} {entity_key}: veri yok")
+                lines.append(f"\n{ENTITY_ICONS.get(entity_key, '📁')} {entity_key}: veri yok")
 
         lines.append(f"\n💰 *TOPLAM GİDER: ₺{total_all:,.2f}*")
         await update.message.reply_text("\n".join(lines), parse_mode="Markdown")
