@@ -8,5 +8,7 @@ window.APP_CONFIG = {
     giderlerMutfak: 'https://docs.google.com/spreadsheets/d/e/.../pub?gid=...&single=true&output=csv',
     sahipMutfak: 'https://docs.google.com/spreadsheets/d/e/.../pub?gid=...&single=true&output=csv',
     sahipKahvehane: 'https://docs.google.com/spreadsheets/d/e/.../pub?gid=...&single=true&output=csv',
+    sahipKisisel: 'https://docs.google.com/spreadsheets/d/e/.../pub?gid=...&single=true&output=csv',
+    vergiHesabi: 'https://docs.google.com/spreadsheets/d/e/.../pub?gid=...&single=true&output=csv',
   }
 };

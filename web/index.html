@@ -272,6 +272,20 @@ html, body { height: 100%; background: var(--bg); color: var(--text); font-famil
         </div>
 
         <div class="section">
+          <div class="section-title">Estimated Tax (this month)</div>
+          <div class="metrics-grid fade-in">
+            <div class="metric-card red-card">
+              <div class="metric-label">KDV (payable)</div>
+              <div class="metric-value red" id="home-kdv">—</div>
+            </div>
+            <div class="metric-card red-card">
+              <div class="metric-label">Peşin Vergi</div>
+              <div class="metric-value red" id="home-pesin-vergi">—</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="section">
           <div class="section-title">Income — last 14 days</div>
           <div class="chart-card fade-in">
             <canvas id="chart-home-income"></canvas>
@@ -419,7 +433,7 @@ html, body { height: 100%; background: var(--bg); color: var(--text); font-famil
 const PASSWORD = window.APP_CONFIG.password;
 const URLS = window.APP_CONFIG.urls;
 
-let data = { gelirler: [], giderler: [], giderlerMutfak: [], sahipMutfak: [], sahipKahvehane: [] };
+let data = { gelirler: [], giderler: [], giderlerMutfak: [], sahipMutfak: [], sahipKahvehane: [], sahipKisisel: [], vergiHesabi: [] };
 let selectedMonth = null;
 let incomePeriod = 'day';
 let expPeriod = 'month';
@@ -530,18 +544,22 @@ async function initApp() {
   ['income-date-to','exp-date-to'].forEach(id => document.getElementById(id).value = today);
 
   try {
-    const [g, gl, gm, sm, sk] = await Promise.all([
+    const [g, gl, gm, sm, sk, ski, vh] = await Promise.all([
       fetchCSV(URLS.giderler),
       fetchCSV(URLS.gelirler),
       fetchCSV(URLS.giderlerMutfak),
       fetchCSV(URLS.sahipMutfak),
       fetchCSV(URLS.sahipKahvehane),
+      fetchCSV(URLS.sahipKisisel),
+      fetchCSV(URLS.vergiHesabi),
     ]);
     data.giderler = g;
     data.gelirler = gl;
     data.giderlerMutfak = gm;
     data.sahipMutfak = sm;
     data.sahipKahvehane = sk;
+    data.sahipKisisel = ski;
+    data.vergiHesabi = vh;
     renderAll();
   } catch(e) {
     console.error(e);
@@ -571,6 +589,7 @@ function renderHome() {
     ...data.giderlerMutfak.filter(r => inSelectedMonth(r['Tarih'])),
     ...data.sahipMutfak.filter(r => inSelectedMonth(r['Tarih'])),
     ...data.sahipKahvehane.filter(r => inSelectedMonth(r['Tarih'])),
+    ...data.sahipKisisel.filter(r => inSelectedMonth(r['Tarih'])),
   ];
   const expenses = allExp.reduce((s,r) => s + parseAmount(r['Tutar (₺)']), 0);
 
@@ -590,6 +609,14 @@ function renderHome() {
   document.getElementById('home-avg-desserts').textContent = (totalDesserts/numDays).toFixed(1);
   document.getElementById('home-income-sub').textContent = gelirMonth.length + ' entries';
   document.getElementById('home-expenses-sub').textContent = allExp.length + ' entries';
+
+  // Estimated tax: read the precomputed row for the selected month from "Vergi Hesabı"
+  const ayKey = `${selectedMonth.getFullYear()}-${String(selectedMonth.getMonth()+1).padStart(2,'0')}`;
+  const vergiRow = data.vergiHesabi.find(r => r['Ay'] === ayKey);
+  const netKdv = vergiRow ? parseAmount(vergiRow['Net KDV (ödenecek)']) : 0;
+  const pesinVergi = vergiRow ? parseAmount(vergiRow['Peşin Vergi']) : 0;
+  document.getElementById('home-kdv').textContent = fmt(netKdv);
+  document.getElementById('home-pesin-vergi').textContent = fmt(pesinVergi);
 
   // Chart: last 14 days income
   const today = new Date();
