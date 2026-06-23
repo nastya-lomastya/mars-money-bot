@@ -1,4 +1,4 @@
-const CACHE = 'mars-v2';
+const CACHE = 'mars-v3';
 const ASSETS = ['/', '/index.html', '/manifest.json'];
 
 self.addEventListener('install', e => {
