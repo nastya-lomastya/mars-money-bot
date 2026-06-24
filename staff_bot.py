@@ -138,6 +138,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
         "💸 /gider — Yeni gider ekle\n"
         "✏️ /duzenle — Son kaydı düzenle\n"
         "📊 /ozet — Bu ayın özeti\n"
+        "📅 /gunozet — Bugünün özeti\n"
         "❌ /iptal — Mevcut işlemi iptal et\n\n"
         "Başlamak için /gider yaz!",
         parse_mode="Markdown"
@@ -447,26 +448,24 @@ async def cancel(update: Update, context: ContextTypes.DEFAULT_TYPE):
     return ConversationHandler.END
 
 
-async def ozet(update: Update, context: ContextTypes.DEFAULT_TYPE):
+async def send_ozet(update: Update, title, matches_fn):
     try:
-        now = datetime.now()
-        month_str = now.strftime("%m.%Y")
         total_all = 0
-        lines = [f"📊 *{now.strftime('%B %Y')} — Çalışan Giderleri*\n"]
+        lines = [f"📊 *{title}*\n"]
 
         for entity_key, sheet_name in SHEET_NAMES.items():
             try:
                 ws = get_sheet(entity_key)
                 records = ws.get_all_records()
-                monthly = [r for r in records if str(r.get("Tarih", "")).endswith(month_str)]
-                total = sum(float(r.get("Tutar (₺)", 0)) for r in monthly)
+                filtered = [r for r in records if matches_fn(str(r.get("Tarih", "")))]
+                total = sum(float(r.get("Tutar (₺)", 0)) for r in filtered)
                 total_all += total
                 by_cat = {}
-                for r in monthly:
+                for r in filtered:
                     cat = r.get("Kategori", "Diğer")
                     by_cat[cat] = by_cat.get(cat, 0) + float(r.get("Tutar (₺)", 0))
                 icon = "🍳" if entity_key == "Mutfak" else "☕"
-                lines.append(f"{icon} *{entity_key}:* ₺{total:,.2f} ({len(monthly)} işlem)")
+                lines.append(f"{icon} *{entity_key}:* ₺{total:,.2f} ({len(filtered)} işlem)")
                 for cat, amt in sorted(by_cat.items(), key=lambda x: -x[1]):
                     lines.append(f"  • {cat}: ₺{amt:,.2f}")
             except:
@@ -479,11 +478,24 @@ async def ozet(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.message.reply_text("❌ Özet alınamadı.")
 
 
+async def ozet(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    now = datetime.now()
+    month_str = now.strftime("%m.%Y")
+    await send_ozet(update, f"{now.strftime('%B %Y')} — Çalışan Giderleri", lambda tarih: tarih.endswith(month_str))
+
+
+async def gunozet(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    now = datetime.now()
+    today_str = now.strftime("%d.%m.%Y")
+    await send_ozet(update, f"{today_str} — Çalışan Giderleri", lambda tarih: tarih == today_str)
+
+
 async def post_init(app):
     await app.bot.set_my_commands([
         BotCommand("gider", "Yeni gider ekle"),
         BotCommand("duzenle", "Son kaydı düzenle"),
         BotCommand("ozet", "Bu ayın özeti"),
+        BotCommand("gunozet", "Bugünün özeti"),
         BotCommand("iptal", "Mevcut işlemi iptal et"),
     ])
 
@@ -519,6 +531,7 @@ def main():
 
     app.add_handler(CommandHandler("start", start))
     app.add_handler(CommandHandler("ozet", ozet))
+    app.add_handler(CommandHandler("gunozet", gunozet))
     app.add_handler(gider_handler)
     app.add_handler(edit_handler)
 
