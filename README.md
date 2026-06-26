@@ -45,8 +45,15 @@ deploy/           post-receive hook for git-based deployment
 
 ## 📸 Screenshots
 
-<!-- <img src="screenshots/dashboard-home.png" width="300" alt="Dashboard home screen" /> -->
-<!-- <img src="screenshots/dashboard-ozgur.png" width="300" alt="Özgür tab" /> -->
+#### Telegram bot in action
+<img src="screenshots/bot-gif.gif" width="300" alt="Telegram expense bot demo" />
+
+#### Dashboard — Income
+<img src="screenshots/income1.PNG" width="300" alt="Dashboard income tab" />
+<img src="screenshots/income2.PNG" width="300" alt="Dashboard income tab, category breakdown" />
+
+#### Dashboard — Expenses
+<img src="screenshots/expences.PNG" width="300" alt="Dashboard expenses tab" />
 
 ---
 
